@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package app1.v1;
+
+option go_package = "github.com/Shitomo/play-with-chatgpt-4/pkg/connect/app1/v1;app1v1";
+
+service HelloService {
+  rpc Hello(HelloRequest) returns (HelloResponse) {}
+}
+
+message HelloRequest {}
+
+message HelloResponse {
+  string message = 1;
+}

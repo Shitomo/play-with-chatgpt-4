@@ -29,3 +29,8 @@ logs_app2:
 port_forward_app2:
 	@kubectl port-forward svc/app2 8081:8080
           
+.PHONY: gen
+gen:
+	@go generate ./...
+	@(cd proto && buf generate --template buf.gen.yaml)
+	@go mod tidy
