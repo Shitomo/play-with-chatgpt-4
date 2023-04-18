@@ -10,14 +10,20 @@ import (
 
 func main() {
 	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		resp, err := http.Get(os.Getenv("ENDPOINT") + "/hello")
+		log.Print("handle hello")
+		resp, err := http.Get(os.Getenv("API_SERVER_URL") + "/hello")
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			fmt.Fprintf(w, "error %v+", err)
+
+			return
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(w, "error %v+", err)
+
+			return
 		}
 		fmt.Fprintf(w, string(body)+"Goodbye World")
 	})
