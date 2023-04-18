@@ -25,7 +25,7 @@ func main() {
 
 			return
 		}
-		fmt.Fprintf(w, string(body)+"Goodbye World")
+		fmt.Fprintf(w, string(body)+",Goodbye World")
 	})
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
