@@ -4,6 +4,14 @@ export
 APP1_DOCKER_REPO := $(DOCKERHUB_USERNAME)/app1
 APP2_DOCKER_REPO := $(DOCKERHUB_USERNAME)/app2
 
+setup:
+	@kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.4.0/cert-manager.yaml
+	@kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+
+teardown:
+	@kubectl delete -f https://github.com/jetstack/cert-manager/releases/download/v1.4.0/cert-manager.yaml
+	@kubectl delete -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+
 app1:
 	@go run cmd/app1/main.go
 
@@ -17,7 +25,7 @@ image_app2:
 	@KO_DOCKER_REPO=$(APP2_DOCKER_REPO) ko build --sbom=none --bare ./cmd/app2 --platform=linux/amd64
 
 update:
-	@kubectl delete -f k8s.yaml
+	@kubectl apply -f otel-collector.yaml 
 	@kubectl apply -f k8s.yaml 
 
 logs_app1:
