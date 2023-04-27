@@ -13,7 +13,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -21,9 +21,9 @@ import (
 )
 
 func NewExporter() (sdktrace.SpanExporter, error) {
-	return stdouttrace.New(
-		stdouttrace.WithPrettyPrint(),
-		stdouttrace.WithWriter(os.Stderr),
+	return otlptracegrpc.New(
+		context.Background(),
+		otlptracegrpc.WithInsecure(),
 	)
 }
 
