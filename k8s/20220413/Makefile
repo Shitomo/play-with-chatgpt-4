@@ -25,6 +25,8 @@ image_app2:
 	@KO_DOCKER_REPO=$(APP2_DOCKER_REPO) ko build --sbom=none --bare ./cmd/app2 --platform=linux/amd64
 
 update:
+	@kubectl delete -f k8s.yaml 
+	@kubectl delete -f otel-collector.yaml 
 	@kubectl apply -f otel-collector.yaml 
 	@kubectl apply -f k8s.yaml 
 

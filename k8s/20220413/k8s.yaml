@@ -40,6 +40,7 @@ spec:
           containers:
           - name: app1
             image: shitomo/app1:latest
+            imagePullPolicy: Always
             ports:
             - containerPort: 8080
           - name: agent
@@ -88,6 +89,7 @@ spec:
           containers:
           - name: app2
             image: shitomo/app2:latest
+            imagePullPolicy: Always
             ports:
             - containerPort: 8080
             env:
