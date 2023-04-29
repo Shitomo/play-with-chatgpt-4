@@ -35,10 +35,12 @@ func NewResource(name, version string) *resource.Resource {
 	)
 }
 
-func SetupTraceProvider(shutdownTimeout time.Duration) (func(), error) {
+var tracer = otel.Tracer("app2/app2-service")
+
+func main() {
 	exporter, err := NewExporter()
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
 	reource := NewResource("example-service", "1.0.0")
@@ -48,26 +50,17 @@ func SetupTraceProvider(shutdownTimeout time.Duration) (func(), error) {
 		sdktrace.WithResource(reource),
 	)
 	otel.SetTracerProvider(tracerProvider)
-
-	cleanup := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			log.Printf("Failed to shutdown tracer provider: %v", err)
-		}
-	}
-	return cleanup, nil
-}
-
-var tracer = otel.Tracer("app2/app2-service")
-
-func main() {
-	cleanup, err := SetupTraceProvider(10 * time.Second)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer cleanup()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := tracerProvider.Shutdown(ctx); err != nil {
+			log.Printf("Failed to shutdown tracer provider: %v", err)
+		}
+	}()
 
 	// 後続のサービスにつなげるためにpropagaterを追加
 	otel.SetTextMapPropagator(
@@ -76,12 +69,20 @@ func main() {
 			propagation.Baggage{},
 		),
 	)
+
 	url := os.Getenv("API_SERVER_URL")
 	if url == "" {
 		log.Fatal("API_SERVER_URL is not set")
 	}
 
-	client := app1v1connect.NewHelloServiceClient(http.DefaultClient, url, connect.WithInterceptors(otelconnect.NewInterceptor()))
+	client := app1v1connect.NewHelloServiceClient(http.DefaultClient, url, connect.WithInterceptors(otelconnect.NewInterceptor(
+		otelconnect.WithTracerProvider(tracerProvider),
+		otelconnect.WithPropagator(propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		)),
+		otelconnect.WithTrustRemote(),
+	)))
 
 	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := tracer.Start(r.Context(), "app2/hello")
@@ -97,6 +98,7 @@ func main() {
 
 		w.Write([]byte(fmt.Sprintf("%s, and Goodbye", res.Msg.Message)))
 	})
+
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
